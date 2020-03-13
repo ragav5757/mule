@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="account_sf" format="csv">
+      <types:shape format="weave" example="examples/accounts1.csv"><![CDATA[%dw 2.0
+
+type account_sf = Array<{|  Name: String,   Phone: String|}>
+
+]]></types:shape>
+      <types:properties>
+        <types:property name="headerLineNumber" value="0"/>
+        <types:property name="header" value="true"/>
+        <types:property name="isQuotedString" value="false"/>
+      </types:properties>
+    </types:type>
+    <types:type name="sf_acc" format="json">
+      <types:shape format="weave" example="examples/sfacc.json"><![CDATA[%dw 2.0
+
+type sf_acc = {|
+  name: String, 
+  phone: String
+|} {"example": "{\"name\":\"Akshay\",\"phone\":\"85555555\"}"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#95d55f34-9f99-4357-9763-5ae35549e875">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="account_sf"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#5fb7d83e-2dea-48d3-ba6d-6230bec966ea">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="sf_acc"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>

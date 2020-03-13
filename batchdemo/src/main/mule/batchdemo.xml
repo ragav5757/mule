@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<file:config name="File_Config" doc:name="File Config" doc:id="258b9b01-a576-45ab-92d8-fe17a4735315" >
+		<file:connection workingDir="F:\mule" />
+	</file:config>
+	<salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="c303b19c-44b7-4d76-8c31-59f9cd55fd5e" >
+		<salesforce:cached-basic-connection username="pprs.reddy@gmail.com" password="Ragha@77" securityToken="aHUZ5GJKaRMFv7PpiqTW0qB0q" />
+	</salesforce:sfdc-config>
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="ee3c80c3-2c87-4baa-bcb1-8e307cb54c68" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="batchdemoFlow" doc:id="e6ff242d-c3d1-4df5-b5bd-3e49962dc77c" >
+		<file:listener doc:name="On New or Updated File" doc:id="c7ecfbb3-5804-47c1-bdb5-4681824ec61d" config-ref="File_Config" directory="s" autoDelete="true" moveToDirectory="/d">
+			<scheduling-strategy >
+				<fixed-frequency frequency="5000" />
+			</scheduling-strategy>
+		</file:listener>
+		<ee:transform doc:name="Transform Message" doc:id="a63b8adf-10c3-4818-81bc-0b875950dece" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<batch:job jobName="batchdemoBatch_Job" doc:id="e296562b-206b-42b3-afc4-aebaa3547e3a" >
+			<batch:process-records >
+				<batch:step name="Batch_Step1" doc:id="424fa5bd-2d30-4a8e-a746-a8aa482333d6" >
+					<ee:transform doc:name="Transform Message" doc:id="95d55f34-9f99-4357-9763-5ae35549e875" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	Name: payload.Name,
+	Phone: payload.Phone
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<salesforce:create-single doc:name="Create single" doc:id="e8e401de-2e43-4a8d-bbcf-532c7a72bd11" config-ref="Salesforce_Config" type="Account" />
+					<ee:transform doc:name="Transform Message" doc:id="93405320-d367-41c5-843d-4b1cab8c8ccf" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<logger level="INFO" doc:name="Logger" doc:id="41c8e04a-fa8b-4f44-aa42-254acb5d3b82" message="batch step completed: #[payload]"/>
+				</batch:step>
+			</batch:process-records>
+			<batch:on-complete >
+				<logger level="INFO" doc:name="Logger" doc:id="5ffa206e-ca0b-46c5-bc21-8b7073e2f00f" message="JOB Completed"/>
+			</batch:on-complete>
+		</batch:job>
+	</flow>
+	<flow name="batchdemoFlow1" doc:id="57ef270e-5913-4a1f-9da1-527889b9a0be" >
+		<http:listener doc:name="Listener" doc:id="88069060-923b-42bf-8971-3d607277bea9" config-ref="HTTP_Listener_config" path="/accounts" allowedMethods="POST"/>
+		<ee:transform doc:name="Transform Message" doc:id="5fb7d83e-2dea-48d3-ba6d-6230bec966ea" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+[{
+	Name: payload.name,
+	Phone: payload.phone
+}]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<salesforce:create doc:name="Create" doc:id="18012a67-ba56-476a-b1e3-652a56700935" config-ref="Salesforce_Config" type="Account"/>
+		<ee:transform doc:name="Transform Message" doc:id="2bb380e9-0a56-475f-a87a-7df9dc32bc3e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="a24e3fa6-7f41-435c-b7ed-54c89480b79f" message="account created: #[payload]"/>
+	</flow>
+	<flow name="batchdemoFlow2" doc:id="2eb9557e-dcd3-44a2-930b-153a780baae6" >
+		<http:listener doc:name="Listener" doc:id="5e5c42c7-ea3b-4af6-a983-60d9adb9994b" config-ref="HTTP_Listener_config" path="/sf2"/>
+		<ee:transform doc:name="Transform Message" doc:id="a3626ce4-a0e3-42a8-bcf7-bfc6194915aa" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<salesforce:upsert doc:name="Upsert" doc:id="07fed67a-1909-471a-9323-a613d68b3b68" config-ref="Salesforce_Config"/>
+	</flow>
+</mule>
