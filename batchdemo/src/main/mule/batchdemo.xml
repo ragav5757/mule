@@ -18,7 +18,7 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 		<http:listener-connection host="0.0.0.0" port="8081" />
 	</http:listener-config>
 	<flow name="batchdemoFlow" doc:id="e6ff242d-c3d1-4df5-b5bd-3e49962dc77c" >
-		<file:listener doc:name="On New or Updated File" doc:id="c7ecfbb3-5804-47c1-bdb5-4681824ec61d" config-ref="File_Config" directory="s" autoDelete="true" moveToDirectory="/d">
+		<file:listener doc:name="On New or Updated File" doc:id="c7ecfbb3-5804-47c1-bdb5-4681824ec61d" config-ref="File_Config" directory="s" autoDelete="true" moveToDirectory="d">
 			<scheduling-strategy >
 				<fixed-frequency frequency="5000" />
 			</scheduling-strategy>
@@ -57,6 +57,10 @@ payload]]></ee:set-payload>
 					</ee:transform>
 					<logger level="INFO" doc:name="Logger" doc:id="41c8e04a-fa8b-4f44-aa42-254acb5d3b82" message="batch step completed: #[payload]"/>
 				</batch:step>
+				<batch:step name="Batch_Step3" doc:id="78c19fa7-f426-4195-9fa1-95f96054d64e" acceptPolicy="ONLY_FAILURES">
+					<logger level="INFO" doc:name="Logger" doc:id="cb381971-3d9a-4930-b688-0238c5085571" message="failure records #[payload]"/>
+				</batch:step>
+				<batch:step name="Batch_Step2" doc:id="72963e22-1ee4-496c-9610-e25e05e65ba8" />
 			</batch:process-records>
 			<batch:on-complete >
 				<logger level="INFO" doc:name="Logger" doc:id="5ffa206e-ca0b-46c5-bc21-8b7073e2f00f" message="JOB Completed"/>
@@ -86,18 +90,5 @@ payload]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
 		<logger level="INFO" doc:name="Logger" doc:id="a24e3fa6-7f41-435c-b7ed-54c89480b79f" message="account created: #[payload]"/>
-	</flow>
-	<flow name="batchdemoFlow2" doc:id="2eb9557e-dcd3-44a2-930b-153a780baae6" >
-		<http:listener doc:name="Listener" doc:id="5e5c42c7-ea3b-4af6-a983-60d9adb9994b" config-ref="HTTP_Listener_config" path="/sf2"/>
-		<ee:transform doc:name="Transform Message" doc:id="a3626ce4-a0e3-42a8-bcf7-bfc6194915aa" >
-			<ee:message >
-				<ee:set-payload ><![CDATA[%dw 2.0
-output application/java
----
-{
-}]]></ee:set-payload>
-			</ee:message>
-		</ee:transform>
-		<salesforce:upsert doc:name="Upsert" doc:id="07fed67a-1909-471a-9323-a613d68b3b68" config-ref="Salesforce_Config"/>
 	</flow>
 </mule>
